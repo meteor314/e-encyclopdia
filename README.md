@@ -1,5 +1,5 @@
-# project
-# project
+# e-encyclopedia
+# A smart wiki for everybody
 We have created a website (named e-encyclopedia). On this site a member can register, interact with other members. For example, he can publish an article on various subjects (science, math, history, economics, literature, sport ...). Other Internet users registered on our site can read the contents, give their opinion via the comment section, put "likes" under each article. 
 
 There is also a page for registration and login on our site, once a user is logged in, he will be automatically redirected to his profile page. On this one, the latter can modify his pseudonym, update his profile picture, change his password, as well as the theme (dark or light). A user who is not a member of our site, does not benefit from these options, he can still read an article. 
