@@ -1,219 +1,378 @@
-<?php 
-session_start();
-require('php/connect.php');
-// "Le problème, ce n'est pas l'internet. Le problème, c'est l'insécurité désastreuse de tous ces ordinateurs reliés à l'internet. Il vaudrait mieux réécrire Windows que TCP/IP."
-if(!empty($_SESSION['id'])) {
-	header("Location:profil.php?id=" . $_SESSION['id'] );
+<?php
+
+function securisation ($input) { //XML ATTACK, SQL injection  
+    $input = htmlspecialchars($input);
+    return $input;
 
 }
-if(isset($_POST['submitBtn'])) {
-	if(!empty($_POST['userName']) AND !empty($_POST['email']) AND !empty($_POST['pwd']) AND !empty($_POST['pwd2']) AND !empty($_POST['captcha']) ) {
-		
-		function secure($n){
-			$n = htmlspecialchars($n);
-			$n = stripcslashes($n);
-			$n = strip_tags($n);
-			$n = trim($n);
-			return $n;
-	    }
-
-	  	$email = secure($_POST['email']);
-	  	$userName = secure($_POST['userName']);
-	  	$pwd = ($_POST['pwd']);
-	  	$pwd2 = ($_POST['pwd2']);
-	  	$captcha  = secure($_POST['captcha']);
-		$code = rand(100, 999);
-		$_SESSION['code'] = $code;
-		$avatar = "default.jpg";
-		$bio = "Le salaire est déterminé par la lutte entre capitaliste et ouvrier. La victoire appartient nécessairement au capitaliste. Karl Marx.";
 
 
-	  	if(preg_match("#^[a-z0-9._-]+@[a-z]{3,}+\.[a-z]{2,5}$#i", $email)) {
 
-	  		if(preg_match("#^[a-z0-9-_.]{2,}$#i", $userName)) {
+session_start() ;
+if(isset($_POST['submit_btn'])) {
+    if(!empty($_POST["user_name"]) AND !empty($_POST["e_mail"]) AND !empty($_POST["pwd1"]) AND !empty($_POST["pwd2"]) ) {
+        $userName=securisation($_POST['user_name']);
+        $e_mail=securisation($_POST['e_mail']);
+        $pwd1=($_POST['pwd1']);
+        $pwd2=($_POST['pwd2']);
 
-	  			if($pwd2 == $pwd ) {
-	  				if(strlen($pwd) >5 ) {
+        settype($userName, "string"); //  type string
+        settype($e_mail, "string"); 
+        
+        if($pwd1 == $pwd2) {
+            if($pwd1 > 7) {
+                if(filter_var($e_mail, FILTER_VALIDATE_EMAIL)) {// is a valid email address
+                    if(preg_match("#^[a-z0-9A-Z_]{3,23}#i", $userName)){
+                        $pwd = password_hash($pwd1, PASSWORD_DEFAULT);
+                        echo $pwd;
+                       
 
-	  					$option = [
-		  					'cost' => 11,
-		  				];
-		  				$pwd = password_hash($pwd2, PASSWORD_BCRYPT, $option);
+                    } else {
+                        echo ("Ce pseudo n'est pas valide!");
+                    }
+                } else {
+                    echo ("Mail invalide");
+                }
 
-		  				if(strlen($email) < 27 || strlen($userName)  < 15) {
 
-		  					$request = $db->prepare("SELECT * FROM member WHERE email = ?");
-		  					$request->execute(array($email));
-		  					$answer =  $request->rowCount();
+            }else {
+                echo ("Le mot de passe doit contenir au moins 8 caractères");
+            }
 
-		  					if($answer == 0) { // if the mail doesn't exist in our database
+        }else {
+            echo ("Les mots de passe ne sont pas identique");
 
-		  						if(isset($_POST['checkbox'])) {
+        }
 
-		  							if($_SESSION['captcha'] == $captcha) {
 
-			  							$insert  = $db->prepare('INSERT INTO member (pseudo, email, pwd, date_time_register, isConfirm, code, token, bio, avatar) VALUES (?,?,?,CURDATE(),?,?, 4,? , ? )');
-			  							$insert->execute(array($userName, $email, $pwd, 0, $code, $bio,  $avatar));
-			  							$_SESSION['email'] = $email;
-			  							header("Location:php/sendemail.php");
-
-		  							} else {
-		  								$error = "Désolé le captcha n'est pas valide";
-		  							}
-
-		  						} else {
-		  							$error = "Avez-vous accepté la condition générales d'utilisation?";
-		  						}
-		  						
-
-		  					} else {
-		  						$error =  "Ce mail est déjà utilisé! ";
-		  					}
-		  				} else {	  					
-		  					$error = " Votre mail ou votre pseudo n'est pas valide";
-		  				}
- 
-	  				} else {
-	  					$error = "Les deux mots de passses doivent être identiques et contenir  plus de 6 caractère! ";
-
-	  				}
-
-	  				
-	  			} else {
-	  				$error = "Les deux mots de passses doivent être identiques et contenir  plus de 6 caractère! ";
-	  			}
-
-	  		} else {
-	  			$error = "Votre pseudo ne doit contenir uniquement des caractères alphanumériques !";
-	  		}
-	  	 	
-  	    } else {
-  	 		$error =" Votre mail n'est pas valide ! " ;
-  	    }
-
-  	} else {
-  		$error = "Veuillez remplir tous les champs ! ";
-  	} 
+        
+    } else {
+        echo ("tous les champs ne sont pas complétés");
+    }
 }
 
 
 
 ?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>  
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="description" content="Encylopédie en ligne">
-    <meta name="abstract" content="Encylopédie en ligne">
-    <meta name="keywords" content="<?=$infoArticle['title']?>" />
-    <meta name="author" content="meteor">
-    <meta name="generator" content="PHPMyADMIN" />
-    <meta http-equiv="pragma" content="no-cache" />
-    <meta name="identifier-url" content="http://e-encylopedia.com/" />
-    <meta name="revisit-after" content="1" />
-    <meta content="origin" name="referrer"> 
-    <meta data-n-head="true" name="referrer" content="origin-when-crossorigin">
-    <meta name="language" content="FR" />
-    <meta name="robots" content="All" />  
-    <meta name="twitter:site" content="@e-encylopedia">
-    <meta name="twitter:creator" content="@e-encylopedia">
-    <meta property="og:site_name" content="e-encylopedia"/>
-    <meta name="twitter:widgets:csp" content="on"/>
-    <link rel="alternate" href="https://e-encylopedia.com/" hreflang="x-default"/>
-    <meta name="theme-color" content="#4F4F4F" />
-    <meta name="msapplication-navbutton-color" content="#4F4F4F">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta property="article:published_time" content="<?=$infoArticle['dateTimePublished'] ?>T16:50:33Z" />
-    <meta name="robots" content="noodp" />
-    <meta name="DC.Format" content="text/html" />
-    <meta name="DC.Type" content="Text" />
 
-    <link rel="apple-touch-icon" sizes="180x180" href="img/logo.png" />
-    <link rel="icon" type="image/png" href="img/logo.png" sizes="32x32" />
-    <link rel="icon" type="image/png" href="img/logo.png" sizes="16x16" />
-	<link rel="stylesheet" type="text/css" href="css/form.css">
+<form method="post" action='#'>
+    <div class="form">
+    <div class="form-toggle"></div>
+    <div class="form-panel one">
+        <div class="form-header">
+        <h1>Inscription - Social Tec</h1>
+        </div>
+        <div class="form-content">
+        <form>
+            <div class="form-group">
+            <label for="username">Nom :</label>
+            <input type ="text" placeholder="nom" name="user_name" id="name" required="required"> 
+            </div>
+            
+            <div class="form-group">
+            <label for="password">Mot de passe :</label>
+            <input type="password" id="password" name="pwd2" required="required"/>
+            </div>
 
-	<title>Inscription | e-encylopedia.</title>
-    <script type="text/javascript" src="js/jquery.js"></script>
-	<!-- don't forget to create the logo -->
+            <div class="form-group">
+            <label for="password">Mot de passe (confirmation):</label>
+            <input type="password" id="password" name="pwd1" required="required"/>
+            </div>
 
-</head>
-<body> 
+            <div class="form-group">
+            <label for="password">E-mail:</label>
+            <input type="email" id="e-mail" name="e_mail" required="required"/>
+            </div>
 
-<div class="mobile-screen" style="max-height: 650px;">
-  
-  <div class="header">
-    <h1>Sign in</h1>
-  </div>
-  
+            <div class="form-group">
+            <label class="form-remember">
+                <input type="checkbox"/>Remember Me
+            </label><a class="form-recovery" href="#">Forgot Password?</a>
+            </div>
+            <div class="form-group">
+            <button type ="submit" value="soumettre" name='submit_btn' id="submit_btn">S'inscrire</button>
+            </div>
+        </form>
+        </div>
+    </div> <!--
+    <div class="form-panel two">
+        <div class="form-header">
+        <h1>Register Account</h1>
+        </div>
+        <div class="form-content">
+        <form>
+            <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" required="required"/>
+            </div>
+            <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required="required"/>
+            </div>
+            <div class="form-group">
+            <label for="cpassword">Confirm Password</label>
+            <input type="password" id="cpassword" name="cpassword" required="required"/>
+            </div>
+            <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" required="required"/>
+            </div>
+            <div class="form-group">
+            <button type="submit">Register</button>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div> -->
 
+<style>
+html {
+  width: 100%;
+  height: 100%;
+}
 
-	<form method="POST" action="#" enctype="multipart/form-data" id='login-form'> 
+body {
+  background: linear-gradient(45deg,rgba(62,35,255, 1) 0%, rgba(62,35,255, 0.4) 100%);
+  color: rgba(0, 0, 0, 0.6);
+  font-family: "Roboto", sans-serif;
+  font-size: 14px;
+  line-height: 1.6em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
 
+.overlay, .form-panel.one:before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: none;
+  background: rgba(0, 0, 0, 0.8);
+  width: 100%;
+  height: 100%;
+}
 
-	    <input type="text" name="userName" id="userName" placeholder= "Votre pseudo " value="<?php if(isset($_POST['userName'])) echo $_POST['userName'];?>" > <br/>
-	    <p id='alphNum' class="hidden" > Uniquement des caratères alphanumériques.</p>
+.form {
+  z-index: 15;
+  position: relative;
+  background: #FFFFFF;
+  width: 600px;
+  border-radius: 4px;
+  box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+  margin: 100px auto 10px;
+  overflow: hidden;
+}
+.form-toggle {
+  z-index: 10;
+  position: absolute;
+  top: 60px;
+  right: 60px;
+  background: #FFFFFF;
+  width: 60px;
+  height: 60px;
+  border-radius: 100%;
+  transform-origin: center;
+  transform: translate(0, -25%) scale(0);
+  opacity: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.form-toggle:before, .form-toggle:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 4px;
+  background: #4285F4;
+  transform: translate(-50%, -50%);
+}
+.form-toggle:before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.form-toggle:after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+.form-toggle.visible {
+  transform: translate(0, -25%) scale(1);
+  opacity: 1;
+}
+.form-group {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin: 0 0 20px;
+}
+.form-group:last-child {
+  margin: 0;
+}
+.form-group label {
+  display: block;
+  margin: 0 0 10px;
+  color: rgba(0, 0, 0, 0.6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+}
+.two .form-group label {
+  color: #FFFFFF;
+}
+.form-group input {
+  outline: none;
+  display: block;
+  background: rgba(0, 0, 0, 0.1);
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  box-sizing: border-box;
+  padding: 12px 20px;
+  color: rgba(0, 0, 0, 0.6);
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  transition: 0.3s ease;
+}
+.form-group input:focus {
+  color: rgba(0, 0, 0, 0.8);
+}
+.two .form-group input {
+  color: #FFFFFF;
+}
+.two .form-group input:focus {
+  color: #FFFFFF;
+}
+.form-group button {
+  outline: none;
+  background: #4285F4;
+  width: 100%;
+  border: 0;
+  border-radius: 4px;
+  padding: 12px 20px;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: 500;
+  line-height: inherit;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.two .form-group button {
+  background: #FFFFFF;
+  color: #4285F4;
+}
+.form-group .form-remember {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+.form-group .form-remember input[type=checkbox] {
+  display: inline-block;
+  width: auto;
+  margin: 0 10px 0 0;
+}
+.form-group .form-recovery {
+  color: #4285F4;
+  font-size: 12px;
+  text-decoration: none;
+}
+.form-panel {
+  padding: 60px calc(5% + 60px) 60px 60px;
+  box-sizing: border-box;
+}
+.form-panel.one:before {
+  content: "";
+  display: block;
+  opacity: 0;
+  visibility: hidden;
+  transition: 0.3s ease;
+}
+.form-panel.one.hidden:before {
+  display: block;
+  opacity: 1;
+  visibility: visible;
+}
+.form-panel.two {
+  z-index: 5;
+  position: absolute;
+  top: 0;
+  left: 95%;
+  background: #4285F4;
+  width: 100%;
+  min-height: 100%;
+  padding: 60px calc(10% + 60px) 60px 60px;
+  transition: 0.3s ease;
+  cursor: pointer;
+}
+.form-panel.two:before, .form-panel.two:after {
+  content: "";
+  display: block;
+  position: absolute;
+  top: 60px;
+  left: 1.5%;
+  background: rgba(255, 255, 255, 0.2);
+  height: 30px;
+  width: 2px;
+  transition: 0.3s ease;
+}
+.form-panel.two:after {
+  left: 3%;
+}
+.form-panel.two:hover {
+  left: 93%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+.form-panel.two:hover:before, .form-panel.two:hover:after {
+  opacity: 0;
+}
+.form-panel.two.active {
+  left: 10%;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  cursor: default;
+}
+.form-panel.two.active:before, .form-panel.two.active:after {
+  opacity: 0;
+}
+.form-header {
+  margin: 0 0 40px;
+}
+.form-header h1 {
+  padding: 4px 0;
+  color: #4285F4;
+  font-size: 24px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.two .form-header h1 {
+  position: relative;
+  z-index: 40;
+  color: #FFFFFF;
+}
+.pen-footer {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  width: 600px;
+  margin: 20px auto 100px;
+}
+.pen-footer a {
+  color: #FFFFFF;
+  font-size: 12px;
+  text-decoration: none;
+  text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.1);
+}
+.pen-footer a .material-icons {
+  width: 12px;
+  margin: 0 5px;
+  vertical-align: middle;
+  font-size: 12px;
+}
 
-	    <input type="" placeholder="Enter Email" name="email" class= "email" autocomplete="off" value="<?php if(isset($_POST['email'])) echo $_POST['email'];?>" >
-	    <p class="msgEmail psw_msg"> </p> <br/>
-	    <input type="password" placeholder="Enter Password" name="pwd" id="pwd" >  <br />
-	    <p id='countChar' class="hidden" > Doit contenir au moins 6 caractères </p>
-	    <p id='number' class="hidden" > Dont 1 chiffez.</p>
-
-
-	    <input type="password" placeholder="Repeat Password" name="pwd2" id='pwd2' > <br />
-	    <p id='pwdNoMatch' class="hidden"> Les deux mots de passes ne sont pas identiques </p>
-        
-        <p style="margin : 0px 37px;"><img src="img/algo.php"></p><br />
-	    <input type='text' name='captcha' id='cpatcha' placeholder="Écrivez le code ..." alt=""> <br />
-
-	   
-	    <!-- Checkbox -->
-	    <label class="switch checkbox-align">
-	        <input type="checkbox" name="checkbox" id="checkbox">
-	        <span class="slider round"></span>
-	    </label>
-	        <sup  style="color:  rgba(255,255,255,.5);">J'accepte les conditions générales <a href="assets/cgu.html"  target="_blank" style="color:  rgba(255,255,255,.5); font-size: 13px;"  >d'utilisation!</a>
-	        </sup>
-
-
-
-	    
-
-	    <button type="submit" class="login-btn" name="submitBtn" id='submitBtn'><span> Envoyer </span></button>
-
-	    
-
-	</form>
-
-
-
-
-  <div class="other-options">
-    <div class="option" id="newUser"><a href="inscription.php"><p class="option-text">New User</p></a></div>
-    <div class="option" id="fPass"><a href="connexion.php"><p class="option-text"> Connexion</p></a></div>
-    <div class="option" ><a href='mailto:shawonshoot@gmail.com'><p class="option-text" >Nous contacter </p></div>
-  </div>
-</div>
-
-
-<?php 
-	    	if(isset($error)) {
-	    		?>
-	    		 <p class='alert' style='text-align: center;'> <?=$error  ?>
-	    		 	 <span onclick='this.parentElement.style.display="none"; ' style="cursor: pointer; float: right; font-size: 19px; color : red;">&times;</span>
-	    		 </p>
-
-	    		<?php 
-	    	}
-	    ?>
-	<!-- #script js  -->
-
-	<script type="text/javascript" src='js/register.js'></script>
-
-</body>
-</html>
+.cp-fab {
+  background: #FFFFFF !important;
+  color: #4285F4 !important;
+}</style>
